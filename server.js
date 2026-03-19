@@ -64,7 +64,9 @@ app.post("/write", async (request, response) => {
 
 app.get("/detail/:id", async (request, response) => {
   try {
-    const post = await db.collection("post").findOne({ _id: new ObjectId(request.params.id) });
+    const post = await db
+      .collection("post")
+      .findOne({ _id: new ObjectId(request.params.id) });
     if (!post) return response.status(404).send("Post not found.");
     response.render("detail", { post });
   } catch (err) {
@@ -75,7 +77,9 @@ app.get("/detail/:id", async (request, response) => {
 
 app.get("/edit/:id", async (request, response) => {
   try {
-    const post = await db.collection("post").findOne({ _id: new ObjectId(request.params.id) });
+    const post = await db
+      .collection("post")
+      .findOne({ _id: new ObjectId(request.params.id) });
     if (!post) return response.status(404).send("Post not found.");
     response.render("edit", { post });
   } catch (err) {
@@ -86,14 +90,28 @@ app.get("/edit/:id", async (request, response) => {
 
 app.post("/edit/:id", async (request, response) => {
   try {
-    await db.collection("post").updateOne(
-      { _id: new ObjectId(request.params.id) },
-      { $set: { title: request.body.title, content: request.body.content } }
-    );
+    await db
+      .collection("post")
+      .updateOne(
+        { _id: new ObjectId(request.params.id) },
+        { $set: { title: request.body.title, content: request.body.content } },
+      );
     response.redirect("/list");
   } catch (err) {
     console.log(err);
     response.status(500).send("Failed to update post.");
+  }
+});
+
+app.delete("/post/:id", async (request, response) => {
+  try {
+    await db
+      .collection("post")
+      .deleteOne({ _id: new ObjectId(request.params.id) });
+    response.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    response.status(500).json({ ok: false });
   }
 });
 
