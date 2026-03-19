@@ -51,8 +51,13 @@
       .post-wrapper > a:first-child .post {
         margin-bottom: 0;
       }
+      .post-wrapper > a:has(.edit-btn) {
+        display: flex;
+        margin-left: 5px;
+        text-decoration: none;
+      }
       .edit-btn {
-        margin-left: 10px;
+        flex: 1;
         padding: 15px 20px;
         font-size: 1rem;
         font-family: Arial, sans-serif;
