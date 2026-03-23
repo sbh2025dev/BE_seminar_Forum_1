@@ -11,8 +11,20 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "ejs": "^5.0.1",
     "express": "^5.2.1",
-    "mongodb": "^5.9.2"
-  }
+    "express-session": "^1.19.0",
+    "mongodb": "^5.9.2",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sbh2025dev/BE_seminar_Forum_test.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sbh2025dev/BE_seminar_Forum_test/issues"
+  },
+  "homepage": "https://github.com/sbh2025dev/BE_seminar_Forum_test#readme"
 }
