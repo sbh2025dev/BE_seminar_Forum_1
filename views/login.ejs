@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 400px;
+        margin: 80px auto;
+        padding: 20px;
+      }
+      h1 { margin-bottom: 20px; }
+      input {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      button:hover { background-color: #555; }
+      .error { color: #c00; margin-bottom: 12px; }
+      .link { margin-top: 12px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <h1>Login</h1>
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+    <form action="/login" method="POST">
+      <input type="text" name="username" placeholder="아이디" required />
+      <input type="password" name="password" placeholder="비밀번호" required />
+      <button type="submit">로그인</button>
+    </form>
+    <p class="link"><a href="/register">계정이 없으신가요? 회원가입</a></p>
+  </body>
+</html>
