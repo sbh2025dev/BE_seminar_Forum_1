@@ -10,27 +10,36 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
-app.use(session({
-  secret: "forum-secret-key",
-  resave: false,
-  saveUninitialized: false,
-}));
+app.use(
+  session({
+    secret: "forum-secret-key",
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use(new LocalStrategy(async (username, password, done) => {
-  try {
-    const user = await db.collection("user").findOne({ username });
-    if (!user) return done(null, false, { message: "존재하지 않는 아이디입니다." });
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return done(null, false, { message: "비밀번호가 틀렸습니다." });
-    return done(null, user);
-  } catch (err) {
-    return done(err);
-  }
-}));
+passport.use(
+  new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await db.collection("user").findOne({ username });
+      if (!user)
+        return done(null, false, { message: "존재하지 않는 아이디입니다." });
+      const match = await bcrypt.compare(password, user.password);
+      if (!match)
+        return done(null, false, { message: "비밀번호가 틀렸습니다." });
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }),
+);
 
+// 로그인 성공 직후 한번 실행, 유저 정보를 req.session.passport.user 라는 곳에 저장한다. (세션 쿠키 발급)
 passport.serializeUser((user, done) => done(null, user._id.toString()));
+
+// 매 요청마다 실행, 세션 쿠키에 저장된 id를 이용해서 DB에서 사용자 정보를 찾아온다. (req.user에 사용자 정보 저장)
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await db.collection("user").findOne({ _id: new ObjectId(id) });
@@ -89,10 +98,15 @@ app.get("/register", (req, res) => {
 
 app.post("/register", async (req, res) => {
   try {
-    const existing = await db.collection("user").findOne({ username: req.body.username });
-    if (existing) return res.render("register", { error: "이미 사용 중인 아이디입니다." });
+    const existing = await db
+      .collection("user")
+      .findOne({ username: req.body.username });
+    if (existing)
+      return res.render("register", { error: "이미 사용 중인 아이디입니다." });
     const hash = await bcrypt.hash(req.body.password, 10);
-    await db.collection("user").insertOne({ username: req.body.username, password: hash });
+    await db
+      .collection("user")
+      .insertOne({ username: req.body.username, password: hash });
     res.redirect("/login");
   } catch (err) {
     console.log(err);
