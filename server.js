@@ -23,6 +23,7 @@ app.use(passport.session());
 // 로그인 검증 방식을 passport에 등록한다.
 passport.use(
   // LocalStrategy: 아이디와 비밀번호로 로그인 검증하는 방식
+  // done: 로그인 검증이 끝났을 때 호출하는 함수, 첫 번째 인자는 에러 객체, 두 번째 인자는 로그인 성공한 사용자 정보, 세 번째 인자는 로그인 실패 시 메시지
   new LocalStrategy(async (username, password, done) => {
     try {
       const user = await db.collection("user").findOne({ username });
