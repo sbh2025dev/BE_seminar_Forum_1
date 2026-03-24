@@ -2,8 +2,6 @@ const express = require("express");
 const app = express();
 const { MongoClient, ObjectId } = require("mongodb");
 const session = require("express-session");
-const passport = require("passport");
-const LocalStrategy = require("passport-local");
 const bcrypt = require("bcrypt");
 
 app.use(express.static("public"));
@@ -20,50 +18,23 @@ app.use(
     saveUninitialized: false,
   }),
 );
-app.use(passport.initialize());
-app.use(passport.session());
 
 // 모든 템플릿에서 로그인한 사용자 정보를 사용할 수 있도록 설정한다.
 // 요청 들어온 후 실행되어 ejs 템플릿이 렌더링되기 전에 실행된다.
-app.use((req, res, next) => {
-  // res.locals: 템플릿에서 사용할 수 있는 변수들을 담는 객체, req.user: 로그인한 사용자 정보가 담긴 객체
-  res.locals.user = req.user || null;
-  next();
-});
-
-// 로그인 검증 방식을 passport에 등록한다.
-passport.use(
-  // LocalStrategy: 아이디와 비밀번호로 로그인 검증하는 방식
-  // done: 로그인 검증이 끝났을 때 호출하는 함수, 첫 번째 인자는 에러 객체, 두 번째 인자는 로그인 성공한 사용자 정보, 세 번째 인자는 로그인 실패 시 메시지
-  new LocalStrategy(async (username, password, done) => {
+app.use(async (req, res, next) => {
+  if (req.session.userId) {
     try {
-      const user = await db.collection("user").findOne({ username });
-      if (!user)
-        return done(null, false, { message: "존재하지 않는 아이디입니다." });
-
-      // bcrypt.compare: 입력한 비밀번호와 DB에 저장된 해시된 비밀번호를 비교한다.
-      const match = await bcrypt.compare(password, user.password);
-      if (!match)
-        return done(null, false, { message: "비밀번호가 틀렸습니다." });
-      return done(null, user);
-    } catch (err) {
-      return done(err);
+      // req.user: 로그인한 사용자 정보가 담긴 객체
+      req.user = await db.collection("user").findOne({ _id: new ObjectId(req.session.userId) });
+    } catch {
+      req.user = null;
     }
-  }),
-);
-
-// 로그인 성공 직후 한번 실행, 유저 정보를 req.session.passport.user 라는 곳에 저장한다. (세션 쿠키 발급)
-passport.serializeUser((user, done) => done(null, user._id.toString()));
-
-// 매 요청마다 실행, 세션 쿠키에 저장된 id를 이용해서 DB에서 사용자 정보를 찾아온다. (req.user에 사용자 정보 저장)
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await db.collection("user").findOne({ _id: new ObjectId(id) });
-    // user 객체를 done 함수의 두 번째 인자로 전달해서 req.user에 저장한다.
-    done(null, user);
-  } catch (err) {
-    done(err);
+  } else {
+    req.user = null;
   }
+  // res.locals: 템플릿에서 사용할 수 있는 변수들을 담는 객체
+  res.locals.user = req.user;
+  next();
 });
 
 // 서버와 DB가 통신하는 방법
@@ -87,11 +58,10 @@ new MongoClient(url)
 // 로그인 여부를 확인하는 미들웨어 함수, next: 다음 함수로 넘어가는 함수
 // 로그인되어 있으면 다음 함수로 넘어가고, 로그인되어 있지 않으면 로그인 페이지로 리다이렉트한다.
 function isLoggedIn(req, res, next) {
-  if (req.isAuthenticated()) return next();
+  if (req.user) return next();
   res.redirect("/login");
 }
 
-// 누군가가 메인페이지를 요청했을 때 "hello world" 라는 문자열로 응답해준다.
 app.get("/", (request, response) => {
   response.sendFile(__dirname + "/index.html");
 });
@@ -100,15 +70,19 @@ app.get("/login", (req, res) => {
   res.render("login", { error: null });
 });
 
-app.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.render("login", { error: info.message });
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      res.redirect("/list");
-    });
-  })(req, res, next);
+app.post("/login", async (req, res, next) => {
+  try {
+    const user = await db.collection("user").findOne({ username: req.body.username });
+    if (!user) return res.render("login", { error: "존재하지 않는 아이디입니다." });
+
+    const match = await bcrypt.compare(req.body.password, user.password);
+    if (!match) return res.render("login", { error: "비밀번호가 틀렸습니다." });
+
+    req.session.userId = user._id.toString();
+    res.redirect("/list");
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -135,7 +109,7 @@ app.post("/register", async (req, res) => {
 });
 
 app.post("/logout", (req, res, next) => {
-  req.logout((err) => {
+  req.session.destroy((err) => {
     if (err) return next(err);
     res.redirect("/login");
   });
