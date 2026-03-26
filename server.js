@@ -23,12 +23,13 @@ app.use(
   }),
 );
 
-// 모든 템플릿에서 로그인한 사용자 정보를 사용할 수 있도록 설정한다.
+// 모든 페이지에서 로그인한 사용자 정보를 사용할 수 있도록 설정한다.
 // 요청 들어온 후 실행되어 ejs 템플릿이 렌더링되기 전에 실행된다.
 app.use(async (req, res, next) => {
   if (req.session.userId) {
     try {
-      // req.user: 로그인한 사용자 정보가 담긴 객체
+      // req.user: 로그인한 사용자 정보를 담는 객체
+      // req.session.userId: 쿠키에 저장된 사용자 ID. 이 ID를 사용하여 DB에서 사용자 정보를 가져온다.
       req.user = await db
         .collection("user")
         .findOne({ _id: new ObjectId(req.session.userId) });
