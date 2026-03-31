@@ -206,10 +206,30 @@ app.get("/detail/:id", async (request, response) => {
       .collection("post")
       .findOne({ _id: new ObjectId(request.params.id) });
     if (!post) return response.status(404).send("Post not found.");
-    response.render("detail", { post });
+    const comments = await db
+      .collection("comment")
+      .find({ postId: new ObjectId(request.params.id) })
+      .sort({ createdAt: 1 })
+      .toArray();
+    response.render("detail", { post, comments });
   } catch (err) {
     console.log(err);
     response.status(500).send("Failed to load post.");
+  }
+});
+
+app.post("/comment/:postId", isLoggedIn, async (req, res) => {
+  try {
+    await db.collection("comment").insertOne({
+      postId: new ObjectId(req.params.postId),
+      author: req.user.username,
+      content: req.body.content,
+      createdAt: new Date(),
+    });
+    res.redirect("/detail/" + req.params.postId);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Failed to post comment.");
   }
 });
 
